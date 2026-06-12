@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Spectra Gallery | Interactive Image Gallery with Filters & Lightbox</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+      background: linear-gradient(145deg, #f5f7fc 0%, #e9eef4 100%);
+      color: #1a2c3e;
+      padding: 2rem 1.5rem;
+      min-height: 100vh;
+    }
+
+    /* main container */
+    .gallery-wrapper {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* header area */
+    .gallery-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .gallery-header h1 {
+      font-size: 2.8rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #1e3c5c, #2b5b84, #4a8bb7);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      letter-spacing: -0.02em;
+    }
+
+    .gallery-header p {
+      color: #4a627a;
+      margin-top: 0.5rem;
+      font-weight: 450;
+    }
+
+    /* filter / category bar (bonus) */
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.75rem;
+      margin: 2rem 0 2rem;
+    }
+
+    .filter-btn {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(60, 90, 120, 0.25);
+      padding: 0.6rem 1.6rem;
+      border-radius: 60px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      color: #1f3b4f;
+      letter-spacing: 0.3px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    .filter-btn:hover {
+      background: #ffffff;
+      border-color: #3b7cbf;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+    }
+
+    .filter-btn.active {
+      background: #1e4a6e;
+      border-color: #1e4a6e;
+      color: white;
+      box-shadow: 0 6px 14px rgba(30, 74, 110, 0.25);
+    }
+
+    /* responsive image grid - masonry style */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.8rem;
+      margin-bottom: 2.5rem;
+    }
+
+    /* gallery card */
+    .gallery-card {
+      position: relative;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(2px);
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: 0 12px 24px -12px rgba(0, 0, 0, 0.15);
+      transition: all 0.35s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+      cursor: pointer;
+      animation: fadeSlideUp 0.5s ease backwards;
+    }
+
+    .gallery-card:hover {
+      transform: translateY(-10px) scale(1.02);
+      box-shadow: 0 28px 36px -14px rgba(0, 0, 0, 0.25);
+      background: white;
+    }
+
+    /* image container with aspect ratio */
+    .image-container {
+      position: relative;
+      overflow: hidden;
+      background: #d9e2ef;
+      aspect-ratio: 4 / 3;
+    }
+
+    .gallery-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s ease, filter 0.4s ease;
+      display: block;
+      will-change: transform;
+    }
+
+    /* hover effects: zoom + slight brightness filter */
+    .gallery-card:hover .gallery-img {
+      transform: scale(1.08);
+      filter: brightness(1.03) contrast(1.02);
+    }
+
+    /* overlay text (category & title) - smooth slide up */
+    .card-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.2) 70%, transparent);
+      padding: 1rem 0.9rem 0.9rem;
+      color: white;
+      transform: translateY(100%);
+      transition: transform 0.35s ease-out;
+      pointer-events: none;
+    }
+
+    .gallery-card:hover .card-overlay {
+      transform: translateY(0);
+    }
+
+    .img-category-badge {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(6px);
+      display: inline-block;
+      padding: 0.2rem 0.8rem;
+      border-radius: 40px;
+    }
+
+    .img-title-text {
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-top: 6px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+
+    /* pagination / navigation controls */
+    .gallery-navigation {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1.5rem;
+      margin: 1rem 0 1.2rem;
+    }
+
+    .nav-button {
+      background: white;
+      border: none;
+      padding: 0.8rem 2rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 60px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      transition: all 0.2s ease;
+      color: #1e3c5c;
+      border: 1px solid #cbdae6;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.03);
+    }
+
+    .nav-button:hover:not(:disabled) {
+      background: #1e3c5c;
+      color: white;
+      border-color: #1e3c5c;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 18px -6px rgba(0, 0, 0, 0.2);
+    }
+
+    .nav-button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .page-indicator {
+      background: rgba(255, 255, 245, 0.8);
+      backdrop-filter: blur(6px);
+      padding: 0.5rem 1.3rem;
+      border-radius: 60px;
+      font-weight: 500;
+      font-size: 0.9rem;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    /* ---------- LIGHTBOX (premium modal) ---------- */
+    .lightbox-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(10, 15, 25, 0.94);
+      backdrop-filter: blur(20px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      visibility: hidden;
+      opacity: 0;
+      transition: visibility 0.2s, opacity 0.3s ease;
+      z-index: 2000;
+      cursor: pointer;
+    }
+
+    .lightbox-modal.active {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .lightbox-inner {
+      position: relative;
+      max-width: 88vw;
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: lightboxPop 0.28s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+    }
+
+    .lightbox-image {
+      max-width: 100%;
+      max-height: 78vh;
+      border-radius: 32px;
+      box-shadow: 0 30px 45px rgba(0, 0, 0, 0.5);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      transition: transform 0.2s;
+    }
+
+    .lightbox-caption {
+      margin-top: 1rem;
+      background: rgba(25, 35, 50, 0.7);
+      backdrop-filter: blur(12px);
+      padding: 0.6rem 1.6rem;
+      border-radius: 80px;
+      color: #f0f3fc;
+      font-weight: 500;
+      font-size: 1rem;
+    }
+
+    .close-lightbox {
+      position: absolute;
+      top: -2rem;
+      right: -1rem;
+      background: rgba(0, 0, 0, 0.65);
+      color: white;
+      font-size: 1.8rem;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: 0.2s;
+      border: none;
+      backdrop-filter: blur(4px);
+    }
+
+    .close-lightbox:hover {
+      background: #c0392b;
+      transform: scale(1.07);
+    }
+
+    .lightbox-nav-controls {
+      position: absolute;
+      top: 50%;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      transform: translateY(-50%);
+      pointer-events: none;
+      padding: 0 1rem;
+    }
+
+    .lb-nav-btn {
+      background: rgba(20, 25, 40, 0.7);
+      backdrop-filter: blur(10px);
+      border: none;
+      font-size: 2.2rem;
+      font-weight: bold;
+      padding: 0.4rem 1rem;
+      border-radius: 60px;
+      cursor: pointer;
+      color: white;
+      transition: 0.2s;
+      pointer-events: auto;
+      line-height: 1;
+    }
+
+    .lb-nav-btn:hover {
+      background: #1e4a6e;
+      transform: scale(1.08);
+    }
+
+    /* animations & keyframes */
+    @keyframes fadeSlideUp {
+      0% {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes lightboxPop {
+      from {
+        opacity: 0;
+        transform: scale(0.94);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    /* responsive adjustments */
+    @media (max-width: 780px) {
+      body {
+        padding: 1.2rem;
+      }
+      .gallery-grid {
+        gap: 1.2rem;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      }
+      .filter-btn {
+        padding: 0.45rem 1.2rem;
+        font-size: 0.8rem;
+      }
+      .nav-button {
+        padding: 0.6rem 1.2rem;
+        font-size: 0.85rem;
+      }
+      .gallery-header h1 {
+        font-size: 2rem;
+      }
+    }
+
+    @media (max-width: 540px) {
+      .gallery-grid {
+        grid-template-columns: 1fr;
+      }
+      .lightbox-nav-controls .lb-nav-btn {
+        font-size: 1.6rem;
+        padding: 0.2rem 0.7rem;
+      }
+      .close-lightbox {
+        top: -1rem;
+        right: -0.2rem;
+        width: 36px;
+        height: 36px;
+        font-size: 1.3rem;
+      }
+    }
+
+    /* empty state styling */
+    .empty-grid-message {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 3rem;
+      font-size: 1.2rem;
+      color: #3c6e8f;
+      background: rgba(220, 235, 250, 0.7);
+      border-radius: 48px;
+      backdrop-filter: blur(4px);
+    }
+  </style>
+</head>
+<body>
+<div class="gallery-wrapper">
+  <div class="gallery-header">
+    <h1>🎨 Spectra Gallery</h1>
+    <p>hover to zoom · filter by category · cinematic lightbox · smooth transitions</p>
+  </div>
+
+  <!-- Category filter bar (bonus) -->
+  <div class="filter-bar" id="filterBar">
+    <button data-filter="all" class="filter-btn active">✨ All Works</button>
+    <button data-filter="nature" class="filter-btn">🌿 Nature</button>
+    <button data-filter="urban" class="filter-btn">🏙️ Urban</button>
+    <button data-filter="abstract" class="filter-btn">🌀 Abstract</button>
+    <button data-filter="portrait" class="filter-btn">🎭 Portrait</button>
+  </div>
+
+  <!-- dynamic gallery grid -->
+  <div id="galleryGrid" class="gallery-grid"></div>
+
+  <!-- Previous / Next navigation & page indicator -->
+  <div class="gallery-navigation">
+    <button id="prevPageBtn" class="nav-button">◀ Prev</button>
+    <span id="pageIndicator" class="page-indicator">Page 1</span>
+    <button id="nextPageBtn" class="nav-button">Next ▶</button>
+  </div>
+</div>
+
+<!-- Lightbox Modal Structure -->
+<div id="lightboxModal" class="lightbox-modal">
+  <div class="lightbox-inner">
+    <button class="close-lightbox" id="closeLightboxBtn">✕</button>
+    <img id="lightboxImg" class="lightbox-image" alt="lightbox view">
+    <div class="lightbox-caption" id="lightboxCaptionText"></div>
+    <div class="lightbox-nav-controls">
+      <button id="lbPrevBtn" class="lb-nav-btn">❮</button>
+      <button id="lbNextBtn" class="lb-nav-btn">❯</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ======================= IMAGE DATASET (high quality + categories) =======================
+  const galleryImages = [
+    { id: 1, src: "https://picsum.photos/id/104/500/400", highres: "https://picsum.photos/id/104/1200/900", title: "Misty Highlands", category: "nature" },
+    { id: 2, src: "https://picsum.photos/id/15/500/400", highres: "https://picsum.photos/id/15/1200/900", title: "Neon Metropolis", category: "urban" },
+    { id: 3, src: "https://picsum.photos/id/20/500/400", highres: "https://picsum.photos/id/20/1200/900", title: "Chromatic Echo", category: "abstract" },
+    { id: 4, src: "https://picsum.photos/id/30/500/400", highres: "https://picsum.photos/id/30/1200/900", title: "Autumn Canopy", category: "nature" },
+    { id: 5, src: "https://picsum.photos/id/42/500/400", highres: "https://picsum.photos/id/42/1200/900", title: "Jazz Soul", category: "portrait" },
+    { id: 6, src: "https://picsum.photos/id/22/500/400", highres: "https://picsum.photos/id/22/1200/900", title: "Urban Geometry", category: "urban" },
+    { id: 7, src: "https://picsum.photos/id/96/500/400", highres: "https://picsum.photos/id/96/1200/900", title: "Serene Lake", category: "nature" },
+    { id: 8, src: "https://picsum.photos/id/119/500/400", highres: "https://picsum.photos/id/119/1200/900", title: "Liquid Dreams", category: "abstract" },
+    { id: 9, src: "https://picsum.photos/id/169/500/400", highres: "https://picsum.photos/id/169/1200/900", title: "Golden Hour", category: "nature" },
+    { id: 10, src: "https://picsum.photos/id/26/500/400", highres: "https://picsum.photos/id/26/1200/900", title: "Venice Nights", category: "urban" },
+    { id: 11, src: "https://picsum.photos/id/91/500/400", highres: "https://picsum.photos/id/91/1200/900", title: "Reflective Gaze", category: "portrait" },
+    { id: 12, src: "https://picsum.photos/id/18/500/400", highres: "https://picsum.photos/id/18/1200/900", title: "Neon Abyss", category: "abstract" },
+    { id: 13, src: "https://picsum.photos/id/55/500/400", highres: "https://picsum.photos/id/55/1200/900", title: "Floral Meadow", category: "nature" },
+    { id: 14, src: "https://picsum.photos/id/2/500/400", highres: "https://picsum.photos/id/2/1200/900", title: "Silicon Valley", category: "urban" },
+    { id: 15, src: "https://picsum.photos/id/76/500/400", highres: "https://picsum.photos/id/76/1200/900", title: "Vintage Reverie", category: "portrait" }
+  ];
+
+  // ---------- GLOBAL STATE ----------
+  let activeFilter = "all";        // current category filter
+  let currentPage = 1;
+  const ITEMS_PER_PAGE = 6;        // clean grid pagination
+
+  // Lightbox state (based on currently filtered images)
+  let currentLightboxCollection = [];   // array of image objects (filtered)
+  let currentLightboxIndex = 0;
+
+  // DOM elements
+  const gridContainer = document.getElementById("galleryGrid");
+  const prevBtn = document.getElementById("prevPageBtn");
+  const nextBtn = document.getElementById("nextPageBtn");
+  const pageSpan = document.getElementById("pageIndicator");
+  const filterBtns = document.querySelectorAll(".filter-btn");
+  const lightboxModal = document.getElementById("lightboxModal");
+  const lightboxImgEl = document.getElementById("lightboxImg");
+  const lightboxCaptionSpan = document.getElementById("lightboxCaptionText");
+  const closeLbBtn = document.getElementById("closeLightboxBtn");
+  const lbPrev = document.getElementById("lbPrevBtn");
+  const lbNext = document.getElementById("lbNextBtn");
+
+  // Helper: get filtered array based on active category
+  function getFilteredImages() {
+    if (activeFilter === "all") return [...galleryImages];
+    return galleryImages.filter(img => img.category === activeFilter);
+  }
+
+  // Pagination helper: return slice for current page
+  function getPaginatedItems(filteredArr, page) {
+    const start = (page - 1) * ITEMS_PER_PAGE;
+    return filteredArr.slice(start, start + ITEMS_PER_PAGE);
+  }
+
+  // total pages from filtered array
+  function getTotalPages(filteredArr) {
+    return Math.max(1, Math.ceil(filteredArr.length / ITEMS_PER_PAGE));
+  }
+
+  // Render gallery with current filters, pagination, hover effects (already in css) and attach lightbox triggers
+  function renderGallery() {
+    const filtered = getFilteredImages();
+    const totalPages = getTotalPages(filtered);
+    
+    // adjust current page if needed
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+    
+    const paginatedItems = getPaginatedItems(filtered, currentPage);
+    
+    // update navigation buttons & page indicator
+    prevBtn.disabled = (currentPage === 1);
+    nextBtn.disabled = (currentPage === totalPages);
+    pageSpan.innerText = `Page ${currentPage} of ${totalPages}`;
+    
+    // handle empty state
+    if (paginatedItems.length === 0) {
+      gridContainer.innerHTML = `<div class="empty-grid-message">🎨 No images in "${activeFilter}" category. Try another filter ✨</div>`;
+      return;
+    }
+    
+    // build HTML with smooth hover, overlay animations
+    let cardsHtml = '';
+    paginatedItems.forEach(item => {
+      cardsHtml += `
+        <div class="gallery-card" data-id="${item.id}" data-category="${item.category}" data-src="${item.src}" data-highres="${item.highres}" data-title="${item.title}">
+          <div class="image-container">
+            <img class="gallery-img" src="${item.src}" alt="${item.title}" loading="lazy">
+            <div class="card-overlay">
+              <span class="img-category-badge">${item.category.toUpperCase()}</span>
+              <div class="img-title-text">${item.title}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+    
+    gridContainer.innerHTML = cardsHtml;
+    
+    // Attach click event for lightbox to each card
+    document.querySelectorAll('.gallery-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const imageId = parseInt(card.dataset.id);
+        // important: current filtered collection (respecting active category)
+        const currentFilteredImages = getFilteredImages();
+        const clickedImageObj = currentFilteredImages.find(img => img.id === imageId);
+        if (clickedImageObj) {
+          currentLightboxCollection = currentFilteredImages;
+          const foundIdx = currentLightboxCollection.findIndex(img => img.id === clickedImageObj.id);
+          currentLightboxIndex = (foundIdx !== -1) ? foundIdx : 0;
+          openLightbox(currentLightboxIndex);
+        }
+      });
+    });
+  }
+  
+  // ================= LIGHTBOX LOGIC with smooth transitions =================
+  function openLightbox(index) {
+    if (!currentLightboxCollection.length) return;
+    const imgObj = currentLightboxCollection[index];
+    if (!imgObj) return;
+    lightboxImgEl.src = imgObj.highres;
+    lightboxCaptionSpan.innerText = `${imgObj.title} · ${imgObj.category}`;
+    lightboxModal.classList.add("active");
+    document.body.style.overflow = "hidden";
+    currentLightboxIndex = index;
+  }
+  
+  function closeLightbox() {
+    lightboxModal.classList.remove("active");
+    document.body.style.overflow = "";
+  }
+  
+  function nextLightboxImage() {
+    if (currentLightboxCollection.length === 0) return;
+    let newIdx = currentLightboxIndex + 1;
+    if (newIdx >= currentLightboxCollection.length) newIdx = 0;
+    currentLightboxIndex = newIdx;
+    const newImg = currentLightboxCollection[currentLightboxIndex];
+    if (newImg) {
+      lightboxImgEl.src = newImg.highres;
+      lightboxCaptionSpan.innerText = `${newImg.title} · ${newImg.category}`;
+    }
+  }
+  
+  function prevLightboxImage() {
+    if (currentLightboxCollection.length === 0) return;
+    let newIdx = currentLightboxIndex - 1;
+    if (newIdx < 0) newIdx = currentLightboxCollection.length - 1;
+    currentLightboxIndex = newIdx;
+    const newImg = currentLightboxCollection[currentLightboxIndex];
+    if (newImg) {
+      lightboxImgEl.src = newImg.highres;
+      lightboxCaptionSpan.innerText = `${newImg.title} · ${newImg.category}`;
+    }
+  }
+  
+  // ---------- FILTER CHANGE HANDLER ----------
+  function setActiveFilter(filterValue) {
+    activeFilter = filterValue;
+    currentPage = 1;   // reset to first page on filter change
+    renderGallery();
+    // update active class on filter buttons
+    filterBtns.forEach(btn => {
+      if (btn.dataset.filter === filterValue) {
+        btn.classList.add("active");
+      } else {
+        btn.classList.remove("active");
+      }
+    });
+  }
+  
+  // Event listeners for filter buttons
+  filterBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      const filterVal = btn.dataset.filter;
+      setActiveFilter(filterVal);
+    });
+  });
+  
+  // Pagination button listeners
+  prevBtn.addEventListener("click", () => {
+    const filteredNow = getFilteredImages();
+    const totalPages = getTotalPages(filteredNow);
+    if (currentPage > 1) {
+      currentPage--;
+      renderGallery();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  });
+  
+  nextBtn.addEventListener("click", () => {
+    const filteredNow = getFilteredImages();
+    const totalPages = getTotalPages(filteredNow);
+    if (currentPage < totalPages) {
+      currentPage++;
+      renderGallery();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  });
+  
+  // Lightbox event bindings
+  closeLbBtn.addEventListener("click", closeLightbox);
+  lbPrev.addEventListener("click", (e) => { e.stopPropagation(); prevLightboxImage(); });
+  lbNext.addEventListener("click", (e) => { e.stopPropagation(); nextLightboxImage(); });
+  
+  // close lightbox on backdrop click
+  lightboxModal.addEventListener("click", (e) => {
+    if (e.target === lightboxModal) closeLightbox();
+  });
+  
+  // Keyboard navigation for lightbox
+  document.addEventListener("keydown", (e) => {
+    if (!lightboxModal.classList.contains("active")) return;
+    if (e.key === "Escape") closeLightbox();
+    if (e.key === "ArrowRight") nextLightboxImage();
+    if (e.key === "ArrowLeft") prevLightboxImage();
+  });
+  
+  // initial render
+  renderGallery();
+</script>
+</body>
+</html>
