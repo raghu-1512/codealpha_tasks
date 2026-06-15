@@ -1,34 +1,33 @@
-# 🧮 Precision Calculator
+# 🎵 HarmonyFlow - Modern Music Player
 
-A modern and responsive calculator application built using **HTML, CSS, and JavaScript**.  
-This project provides a clean user interface with smooth interactions, keyboard support, and accurate arithmetic calculations.
+HarmonyFlow is a modern and responsive web-based music player built using **HTML, CSS, and JavaScript**.  
+It provides an elegant user interface with smooth animations, playlist management, audio controls, and interactive features for an immersive music experience.
 
 ## 🚀 Features
 
-- ✅ Modern dark-themed calculator UI
-- ✅ Responsive design for desktop and mobile devices
-- ✅ Basic arithmetic operations:
-  - Addition (+)
-  - Subtraction (-)
-  - Multiplication (*)
-  - Division (/)
-  - Percentage (%)
-- ✅ Decimal number support
-- ✅ Clear All (AC) functionality
-- ✅ Delete last digit functionality
-- ✅ Keyboard controls support:
-  - Numbers (0-9)
-  - Operators (+, -, *, /, %)
-  - Enter key for calculation
-  - Backspace for deleting
-  - Escape key for clearing
-- ✅ Error handling for invalid calculations
-- ✅ Smooth button animations and hover effects
+- 🎧 Modern glassmorphism music player design
+- 📱 Fully responsive layout for desktop and mobile devices
+- ▶️ Play and pause music controls
+- ⏮ Previous and ⏭ Next track navigation
+- 📀 Dynamic playlist generation
+- 🔊 Volume control slider
+- 🔄 Autoplay toggle functionality
+- ⏱ Real-time progress bar and song duration display
+- 🖱 Click-to-seek progress control
+- ⌨️ Keyboard shortcuts:
+  - Space → Play/Pause
+  - Left Arrow → Previous song
+  - Right Arrow → Next song
+  - Up Arrow → Increase volume
+  - Down Arrow → Decrease volume
+- ✨ Smooth animations and interactive UI effects
+- 🎶 Multiple demo audio tracks support
 
 ## 🛠️ Technologies Used
 
 - HTML5
 - CSS3
 - JavaScript (ES6)
+- HTML Audio API
 
 ## 📂 Project Structure
